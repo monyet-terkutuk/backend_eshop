@@ -7,7 +7,7 @@ const cors = require("cors");
 
 app.use(
   cors({
-    origin: ["https://eshop-tutorial-pyri.vercel.app"],
+    origin: "*",
     credentials: true,
   })
 );
