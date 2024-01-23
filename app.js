@@ -8,7 +8,7 @@ const cors = require("cors");
 app.use(
   cors(
     {
-      origin: "https://front-end-eshop.vercel.app/",
+      origin: "https://front-end-eshop.vercel.app",
       credentials: true,
     },
     (req, callback) => {
@@ -20,7 +20,7 @@ app.use(
 app.use(express.json());
 app.use(cookieParser());
 app.use("/test", (req, res) => {
-  res.send("Hello world!");
+  res.send("Hello cors!");
 });
 
 app.use(bodyParser.urlencoded({ extended: true, limit: "50mb" }));
@@ -43,6 +43,7 @@ const order = require("./controller/order");
 const conversation = require("./controller/conversation");
 const message = require("./controller/message");
 const withdraw = require("./controller/withdraw");
+const welcome = require("./controller/welcome");
 
 app.use("/api/v2/user", user);
 app.use("/api/v2/conversation", conversation);
@@ -54,6 +55,7 @@ app.use("/api/v2/event", event);
 app.use("/api/v2/coupon", coupon);
 app.use("/api/v2/payment", payment);
 app.use("/api/v2/withdraw", withdraw);
+app.use("/", welcome);
 
 // it's for ErrorHandling
 app.use(ErrorHandler);
