@@ -6,10 +6,15 @@ const bodyParser = require("body-parser");
 const cors = require("cors");
 
 app.use(
-  cors({
-    origin: ["https://eshop-tutorial-pyri.vercel.app"],
-    credentials: true,
-  })
+  cors(
+    {
+      origin: "https://front-end-eshop.vercel.app/",
+      credentials: true,
+    },
+    (req, callback) => {
+      callback(null, true);
+    }
+  )
 );
 
 app.use(express.json());
