@@ -40,13 +40,14 @@ router.post(
 
       const activationToken = createActivationToken(seller);
 
-      const activationUrl = `https://https://front-end-eshop.vercel.app/seller/activation/${activationToken}`;
+      const activationUrl = `https://backend-eshop-undeath-cyber.vercel.app/api/v2/shop/activation/${activationToken}`;
 
       try {
         await sendMail({
           email: seller.email,
           subject: "Activate your Shop",
           message: `Hello ${seller.name}, please click on the link to activate your shop: ${activationUrl}`,
+          url: activationUrl,
         });
         res.status(201).json({
           success: true,
@@ -69,11 +70,11 @@ const createActivationToken = (seller) => {
 };
 
 // activate user
-router.post(
+router.get(
   "/activation",
   catchAsyncErrors(async (req, res, next) => {
     try {
-      const { activation_token } = req.body;
+      const activation_token = req.query.token;
 
       const newSeller = jwt.verify(
         activation_token,

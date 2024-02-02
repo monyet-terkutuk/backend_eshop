@@ -1,26 +1,30 @@
-const mailjet = require("node-mailjet");
+const Mailjet = require("node-mailjet");
 
 const sendMail = async (options) => {
-  const mailjetClient = mailjet.connect(
+  const mailjet = Mailjet.apiConnect(
     process.env.MJ_APIKEY_PUBLIC,
     process.env.MJ_APIKEY_PRIVATE
   );
 
-  const request = mailjetClient.post("send", { version: "v3.1" }).request({
+  const request = mailjet.post("send", { version: "v3.1" }).request({
     Messages: [
       {
         From: {
           Email: process.env.MJ_SENDER_EMAIL,
-          Name: process.env.MJ_SENDER_NAME,
+          Name: "Admin",
         },
         To: [
           {
             Email: options.email,
-            // Name: options.name,
+            Name: "Users",
           },
         ],
         Subject: options.subject,
-        TextPart: options.message,
+        TextPart: options.messsage,
+        HTMLPart:
+          '<h3>Dear Users, welcome to our website</h3><br />Please click on the link below to activate your account:<br /><a href="' +
+          options.url +
+          '">Activate</a>',
       },
     ],
   });
