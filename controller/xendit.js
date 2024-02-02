@@ -1,32 +1,72 @@
 const express = require("express");
 const router = express.Router();
 const catchAsyncErrors = require("../middleware/catchAsyncErrors");
-import { PaymentRequestParameters, PaymentRequest } from 'xendit-node/payment_request/models'
 
-const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+// const Xendit = require("xendit-node");
+// const x = new Xendit({
+//   secretKey: process.env.XENDIT_SECRET_KEY,
+// });
+
+const { Xendit } = require("xendit-node");
+const x = new Xendit({
+  secretKey: process.env.XENDIT_SECRET_KEY,
+});
 
 router.post(
   "/process",
   catchAsyncErrors(async (req, res, next) => {
-    const myPayment = await stripe.paymentIntents.create({
-      amount: req.body.amount,
-      currency: "inr",
-      metadata: {
-        company: "Becodemy",
-      },
-    });
+    const { amount, email, order_id } = req.body;
+
+    if (!amount || !email || !order_id) {
+      return next(new Error("Please provide all required fields"));
+    }
+
+    const createInvoice = async () => {
+      const invoiceItems = await x.invoice.createInvoice({
+        externalID: order_id,
+        amount,
+        payerEmail: email,
+        description: "Invoice payment",
+      });
+
+      return invoiceItems.id;
+    };
+
+    const invoiceId = await createInvoice();
+
+    const createPayment = async (invoiceId) => {
+      const createPaymentParams = {
+        externalID: order_id,
+        invoiceID: invoiceId,
+        amount,
+      };
+
+      const payment = await x.invoice.createInvoice(createPaymentParams);
+      return payment.id;
+    };
+
+    const paymentId = await createPayment(invoiceId);
+
     res.status(200).json({
       success: true,
-      client_secret: myPayment.client_secret,
+
+      paymentId,
     });
   })
 );
 
 router.get(
-  "/stripeapikey",
+  "/xenditapikey",
   catchAsyncErrors(async (req, res, next) => {
-    res.status(200).json({ stripeApikey: process.env.STRIPE_API_KEY });
+    res.status(200).json({ xenditApikey: process.env.XENDIT_SECRET_KEY });
   })
 );
+
+router.post("/webhooks", (req, res) => {
+  const payload = req.body; // Data pemberitahuan dari Xendit
+  // Proses data pemberitahuan sesuai kebutuhan bisnis Anda
+  console.log("Received Xendit Webhook:", payload);
+  res.status(200).end(); // Balas ke Xendit untuk konfirmasi penerimaan pemberitahuan
+});
 
 module.exports = router;
