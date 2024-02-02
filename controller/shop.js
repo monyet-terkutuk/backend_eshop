@@ -40,7 +40,7 @@ router.post(
 
       const activationToken = createActivationToken(seller);
 
-      const activationUrl = `http://localhost:8081/api/v2/shop/activation?token=${activationToken}`;
+      const activationUrl = `https://backend-eshop-undeath-cyber.vercel.app/api/v2/user/activation?token=${activationToken}`;
 
       try {
         await sendMail({
