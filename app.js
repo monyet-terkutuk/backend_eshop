@@ -44,6 +44,7 @@ const conversation = require("./controller/conversation");
 const message = require("./controller/message");
 const withdraw = require("./controller/withdraw");
 const xendit = require("./controller/xendit");
+const criteria = require("./controller/criteria");
 
 app.use("/api/v2/user", user);
 app.use("/api/v2/conversation", conversation);
@@ -56,6 +57,7 @@ app.use("/api/v2/coupon", coupon);
 app.use("/api/v2/payment", payment);
 app.use("/api/v2/withdraw", withdraw);
 app.use("/api/v2/xendit", xendit);
+app.use("/api/v2/criteria", criteria);
 // app.use("", welcome);
 
 // it's for ErrorHandling
