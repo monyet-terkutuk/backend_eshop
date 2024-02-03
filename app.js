@@ -19,9 +19,9 @@ app.use(
 
 app.use(express.json());
 app.use(cookieParser());
-app.use("/", (req, res) => {
-  res.send("Hello cors!");
-});
+// app.use("/", (req, res) => {
+//   res.send("Hello BE!");
+// });
 
 app.use(bodyParser.urlencoded({ extended: true, limit: "50mb" }));
 

@@ -1,72 +1,126 @@
 const express = require("express");
 const router = express.Router();
 const catchAsyncErrors = require("../middleware/catchAsyncErrors");
+const midtransClient = require("midtrans-client");
+const Order = require("../model/order");
 
-// const Xendit = require("xendit-node");
-// const x = new Xendit({
-//   secretKey: process.env.XENDIT_SECRET_KEY,
-// });
-
-const { Xendit } = require("xendit-node");
-const x = new Xendit({
-  secretKey: process.env.XENDIT_SECRET_KEY,
+// Create Snap API instance
+let snap = new midtransClient.Snap({
+  isProduction: false,
+  clientKey: process.env.MIDTRANS_CLIENT_KEY,
+  serverKey: process.env.MIDTRANS_SERVER_KEY,
 });
 
 router.post(
   "/process",
   catchAsyncErrors(async (req, res, next) => {
-    const { amount, email, order_id } = req.body;
+    const { amount, order_id } = req.body;
 
-    if (!amount || !email || !order_id) {
-      return next(new Error("Please provide all required fields"));
-    }
+    try {
+      if (!amount || !order_id) {
+        throw new Error("Please provide all required fields");
+      }
 
-    const createInvoice = async () => {
-      const invoiceItems = await x.invoice.createInvoice({
-        externalID: order_id,
-        amount,
-        payerEmail: email,
-        description: "Invoice payment",
-      });
-
-      return invoiceItems.id;
-    };
-
-    const invoiceId = await createInvoice();
-
-    const createPayment = async (invoiceId) => {
-      const createPaymentParams = {
-        externalID: order_id,
-        invoiceID: invoiceId,
-        amount,
+      let parameter = {
+        transaction_details: {
+          order_id,
+          gross_amount: amount,
+        },
+        credit_card: {
+          secure: true,
+        },
       };
 
-      const payment = await x.invoice.createInvoice(createPaymentParams);
-      return payment.id;
-    };
+      const transaction = await snap.createTransaction(parameter);
 
-    const paymentId = await createPayment(invoiceId);
+      // transaction redirect_url
+      let redirectUrl = transaction.redirect_url;
+      console.log("redirectUrl:", redirectUrl);
 
-    res.status(200).json({
-      success: true,
+      res.status(200).json({
+        success: true,
+        url: redirectUrl,
+      });
+    } catch (error) {
+      let errorMessage = "An error occurred while processing the request";
 
-      paymentId,
-    });
+      // Jika error yang terjadi adalah error dari Midtrans API
+      if (error.apiResponse) {
+        const apiErrorResponse = error.apiResponse.body;
+        errorMessage = apiErrorResponse.error_messages.join(", ");
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      res.status(400).json({
+        success: false,
+        message: errorMessage,
+      });
+    }
   })
 );
 
-router.get(
-  "/xenditapikey",
+router.post(
+  "/notification",
   catchAsyncErrors(async (req, res, next) => {
-    res.status(200).json({ xenditApikey: process.env.XENDIT_SECRET_KEY });
+    console.log(req.body);
+    try {
+      const notificationData = req.body;
+
+      const orderId = notificationData.order_id;
+      const transactionStatus = notificationData.transaction_status;
+
+      // Temukan order berdasarkan orderId
+      const order = await Order.findOne({ _id: orderId });
+
+      if (!order) {
+        return res.status(404).json({
+          success: false,
+          message: "Order not found",
+        });
+      }
+
+      // Perbarui status pembayaran berdasarkan transaction_status
+      if (transactionStatus === "settlement") {
+        // Jika status pembayaran adalah settlement
+        order.status = "Completed";
+        order.paymentInfo.id = notificationData.transaction_id;
+        order.paymentInfo.status = notificationData.transaction_status;
+        order.paymentInfo.type = notificationData.payment_type;
+        order.paidAt = new Date(notificationData.settlement_time);
+      } else if (transactionStatus === "pending") {
+        // Jika status pembayaran adalah pending
+        order.status = "Pending";
+      }
+
+      // Simpan perubahan ke dalam dokumen order
+      await order.save();
+
+      console.log(
+        `Transaction notification received. Order ID: ${orderId}. Transaction status: ${transactionStatus}.`
+      );
+
+      res.status(200).json({
+        success: true,
+        message: "Update Status Success",
+      });
+    } catch (error) {
+      let errorMessage = "An error occurred while processing the request";
+
+      // Jika error yang terjadi adalah error dari Midtrans API
+      if (error.apiResponse) {
+        const apiErrorResponse = error.apiResponse.body;
+        errorMessage = apiErrorResponse.error_messages.join(", ");
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      res.status(400).json({
+        success: false,
+        message: errorMessage,
+      });
+    }
   })
 );
-
-router.post("/webhooks", (req, res) => {
-  const payload = req.body; // Data pemberitahuan dari Xendit
-  // Proses data pemberitahuan sesuai kebutuhan bisnis Anda
-  console.log("Received Xendit Webhook:", payload);
-  res.status(200).end(); // Balas ke Xendit untuk konfirmasi penerimaan pemberitahuan
-});
 
 module.exports = router;
