@@ -5,9 +5,10 @@ const cloudinary = require("cloudinary");
 const ErrorHandler = require("../utils/ErrorHandler");
 const catchAsyncErrors = require("../middleware/catchAsyncErrors");
 const jwt = require("jsonwebtoken");
-const sendMail = require("../utils/sendMail");
+const { sendMail, sendMailForgotPW } = require("../utils/sendMail");
 const sendToken = require("../utils/jwtToken");
 const { isAuthenticated, isAdmin } = require("../middleware/auth");
+const crypto = require("crypto");
 
 // create user for admin
 router.post("/create-user", async (req, res, next) => {
@@ -497,6 +498,44 @@ router.delete(
       res.status(201).json({
         success: true,
         message: "User deleted successfully!",
+      });
+    } catch (error) {
+      return next(new ErrorHandler(error.message, 500));
+    }
+  })
+);
+
+// forgot password
+router.put(
+  "/forgot-password",
+  catchAsyncErrors(async (req, res, next) => {
+    try {
+      const { email } = req.body;
+
+      const user = await User.findOne({ email });
+
+      if (!user) {
+        return next(new ErrorHandler("User not found", 400));
+      }
+
+      // Generate random password
+      const randomPassword = crypto.randomBytes(8).toString("hex");
+      user.password = randomPassword;
+
+      // Send email with the new password
+      await sendMailForgotPW({
+        email: user.email,
+        subject: "Reset Password Ayudha Event",
+        message: `Hello ${user.name}, your new password is: ${randomPassword} for your account. Please change your password after login!`,
+        password: randomPassword,
+      });
+
+      // Save the updated user with the new password
+      await user.save();
+
+      res.status(201).json({
+        success: true,
+        message: `Please check your email ${user.email} for the new password!`,
       });
     } catch (error) {
       return next(new ErrorHandler(error.message, 500));
