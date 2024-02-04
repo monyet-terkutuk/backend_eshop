@@ -46,6 +46,7 @@ const withdraw = require("./controller/withdraw");
 const xendit = require("./controller/xendit");
 const criteria = require("./controller/criteria");
 const alternatif = require("./controller/alternatif");
+const penilaian = require("./controller/penilaian");
 
 app.use("/api/v2/user", user);
 app.use("/api/v2/conversation", conversation);
@@ -60,6 +61,7 @@ app.use("/api/v2/withdraw", withdraw);
 app.use("/api/v2/xendit", xendit);
 app.use("/api/v2/criteria", criteria);
 app.use("/api/v2/alternatif", alternatif);
+app.use("/api/v2/penilaian", penilaian);
 // app.use("", welcome);
 
 // it's for ErrorHandling
