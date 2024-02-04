@@ -9,8 +9,56 @@ const sendMail = require("../utils/sendMail");
 const sendToken = require("../utils/jwtToken");
 const { isAuthenticated, isAdmin } = require("../middleware/auth");
 
-// create user
+// create user for admin
 router.post("/create-user", async (req, res, next) => {
+  try {
+    const { name, email, password, avatar, role } = req.body;
+    const userEmail = await User.findOne({ email });
+
+    if (userEmail) {
+      return next(new ErrorHandler("User already exists", 400));
+    }
+
+    const myCloud = await cloudinary.v2.uploader.upload(avatar, {
+      folder: "avatars",
+    });
+
+    const user = {
+      name: name,
+      email: email,
+      password: password,
+      avatar: {
+        public_id: myCloud.public_id,
+        url: myCloud.secure_url,
+      },
+      role: role,
+    };
+
+    const activationToken = createActivationToken(user);
+
+    const activationUrl = `https://backend-eshop-undeath-cyber.vercel.app/api/v2/user/activation?token=${activationToken}`;
+
+    try {
+      await sendMail({
+        email: user.email,
+        subject: "Activate your account",
+        message: `Hello ${user.name}, please click on the link to activate your account: ${activationUrl}`,
+        url: activationUrl,
+      });
+      res.status(201).json({
+        success: true,
+        message: `please check your email:- ${user.email} to activate your account!`,
+      });
+    } catch (error) {
+      return next(new ErrorHandler(error.message, 500));
+    }
+  } catch (error) {
+    return next(new ErrorHandler(error.message, 400));
+  }
+});
+
+// regiter user
+router.post("/register", async (req, res, next) => {
   try {
     const { name, email, password, avatar } = req.body;
     const userEmail = await User.findOne({ email });
@@ -201,6 +249,45 @@ router.put(
       user.name = name;
       user.email = email;
       user.phoneNumber = phoneNumber;
+
+      await user.save();
+
+      res.status(201).json({
+        success: true,
+        user,
+      });
+    } catch (error) {
+      return next(new ErrorHandler(error.message, 500));
+    }
+  })
+);
+
+// update user info for admin
+router.put(
+  "/update-user-info",
+  isAuthenticated,
+  catchAsyncErrors(async (req, res, next) => {
+    try {
+      const { email, password, phoneNumber, name, role } = req.body;
+
+      const user = await User.findOne({ email }).select("+password");
+
+      if (!user) {
+        return next(new ErrorHandler("User not found", 400));
+      }
+
+      const isPasswordValid = await user.comparePassword(password);
+
+      if (!isPasswordValid) {
+        return next(
+          new ErrorHandler("Please provide the correct information", 400)
+        );
+      }
+
+      user.name = name;
+      user.email = email;
+      user.phoneNumber = phoneNumber;
+      user.role = role;
 
       await user.save();
 
