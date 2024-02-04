@@ -8,7 +8,11 @@ const cors = require("cors");
 app.use(
   cors(
     {
-      origin: ["https://www.ivannata.com/", "front-end-eshop.vercel.app", "*"],
+      origin: [
+        "https://www.ivannata.com/",
+        "https://front-end-eshop.vercel.app",
+        "https://ivannata.com/",
+      ],
       credentials: true,
     },
     (req, callback) => {
