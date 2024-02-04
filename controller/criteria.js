@@ -131,18 +131,37 @@ router.get(
   "/sub-criteria/data",
   catchAsyncErrors(async (req, res, next) => {
     try {
-      // Ambil semua sub-criteria dari database
-      const allSubCriteria = await SubCriteria.find();
+      // Ambil semua kriteria beserta sub-criteria dari database
+      const criteriaWithSubCriteria = await Criteria.find().populate(
+        "sub_criteria"
+      );
 
       res.status(200).json({
         success: true,
-        subCriteria: allSubCriteria,
+        criteriaWithSubCriteria: criteriaWithSubCriteria,
       });
     } catch (error) {
       return next(new ErrorHandler(error.message, 500));
     }
   })
 );
+
+// router.get(
+//   "/sub-criteria/data",
+//   catchAsyncErrors(async (req, res, next) => {
+//     try {
+//       // Ambil semua sub-criteria dari database
+//       const allSubCriteria = await SubCriteria.find();
+
+//       res.status(200).json({
+//         success: true,
+//         subCriteria: allSubCriteria,
+//       });
+//     } catch (error) {
+//       return next(new ErrorHandler(error.message, 500));
+//     }
+//   })
+// );
 
 // Delete sub-criteria by ID
 router.delete(
