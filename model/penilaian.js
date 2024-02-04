@@ -15,4 +15,6 @@ const penilaianSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model("Penilaian", penilaianSchema);
+const Penilaian = mongoose.model("Penilaian", penilaianSchema);
+
+module.exports = { Penilaian };

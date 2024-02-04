@@ -16,4 +16,6 @@ const alternatifSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model("Alternatif", alternatifSchema);
+const Alternatif = mongoose.model("Alternatif", alternatifSchema);
+
+module.exports = { Alternatif };

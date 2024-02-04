@@ -2,18 +2,16 @@ const express = require("express");
 const ErrorHandler = require("../utils/ErrorHandler");
 const catchAsyncErrors = require("../middleware/catchAsyncErrors");
 const router = express.Router();
-const Penilaian = require("../model/penilaian");
-const Criteria = require("../model/criteria");
-const Alternatif = require("../model/alternatif");
+const { Penilaian } = require("../model/penilaian");
+const { Criteria } = require("../model/criteria");
+const { Alternatif } = require("../model/alternatif");
 
 // Create Penilaian
 router.post(
   "",
   catchAsyncErrors(async (req, res, next) => {
     try {
-      const { criteria_id, alternatif_id } = req.body;
-
-      nilai = 0;
+      const { criteria_id, alternatif_id, nilai } = req.body;
 
       if (!criteria_id || !alternatif_id) {
         return res.status(400).json({
@@ -23,8 +21,8 @@ router.post(
       }
 
       const penilaian = new Penilaian({
-        criteria_id,
-        alternatif_id,
+        criteria_id: criteria_id,
+        alternatif_id: alternatif_id,
         nilai: nilai,
       });
 
@@ -40,35 +38,66 @@ router.post(
   })
 );
 
-// Get all Penilaian
+// Get all Penilaian with related Criteria and Alternatif
 router.get(
   "",
   catchAsyncErrors(async (req, res, next) => {
     try {
-      // Ambil semua penilaian dari database
       const allPenilaian = await Penilaian.find();
+      let alternatifResults = {};
+      let criteriaMaxValues = {};
 
-      // Ambil data kriteria untuk semua penilaian
-      const criteriaIds = allPenilaian.map(
-        (penilaian) => penilaian.criteria_id
-      );
-      const allCriteria = await Criteria.findById({ criteriaIds });
+      // Collect all penilaian results and find max values for each criteria
+      for (let penilaian of allPenilaian) {
+        const criteria = await Criteria.findById(penilaian.criteria_id);
+        const alternatif = await Alternatif.findById(penilaian.alternatif_id);
 
-      // Ambil data alternatif untuk semua penilaian
-      const alternatifIds = allPenilaian.map(
-        (penilaian) => penilaian.alternatif_id
+        if (!alternatifResults[alternatif.kode_alternatif]) {
+          alternatifResults[alternatif.kode_alternatif] = {
+            _id: alternatif._id.toString(),
+            kode_alternatif: alternatif.kode_alternatif,
+          };
+        }
+
+        alternatifResults[alternatif.kode_alternatif][
+          `hasil_${criteria.criteria_code}`
+        ] = penilaian.nilai;
+
+        // Track max value for each criteria
+        if (
+          !criteriaMaxValues[criteria.criteria_code] ||
+          criteriaMaxValues[criteria.criteria_code] < penilaian.nilai
+        ) {
+          criteriaMaxValues[criteria.criteria_code] = penilaian.nilai;
+        }
+      }
+
+      // Normalize the values
+      let normalizationResults = Object.values(alternatifResults).map(
+        (alternatif) => {
+          let normalizedValues = {};
+          for (const [key, value] of Object.entries(criteriaMaxValues)) {
+            normalizedValues[`hasil_${key}`] =
+              alternatif[`hasil_${key}`] / value;
+          }
+          return {
+            _id: alternatif._id,
+            kode_alternatif: alternatif.kode_alternatif,
+            ...normalizedValues,
+          };
+        }
       );
-      const allAlternatif = await Alternatif.find({
-        _id: { $in: alternatifIds },
-      });
+
+      // Convert the alternatifResults object into an array for penilaian
+      const penilaianResults = Object.values(alternatifResults);
 
       res.status(200).json({
         success: true,
-        penilaian: allPenilaian,
-        criteria: allCriteria,
-        alternatif: allAlternatif,
+        penilaian: penilaianResults,
+        normalisasi: normalizationResults,
       });
     } catch (error) {
+      console.error("Error fetching data:", error);
       return next(new ErrorHandler(error.message, 500));
     }
   })
