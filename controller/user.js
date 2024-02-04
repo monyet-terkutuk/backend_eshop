@@ -264,7 +264,7 @@ router.put(
 
 // update user info for admin
 router.put(
-  "/update-user-info",
+  "/update-user-admin",
   isAuthenticated,
   catchAsyncErrors(async (req, res, next) => {
     try {
