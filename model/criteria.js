@@ -13,6 +13,9 @@ const subCriteriaSchema = new mongoose.Schema(
         value: {
           type: String,
         },
+        description: {
+          type: String,
+        },
       },
     ],
   },
@@ -24,6 +27,9 @@ const SubCriteria = mongoose.model("SubCriteria", subCriteriaSchema);
 const criteriaSchema = new mongoose.Schema(
   {
     name: {
+      type: String,
+    },
+    criteria_code: {
       type: String,
     },
     value: {
