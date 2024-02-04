@@ -127,36 +127,16 @@ router.get(
   })
 );
 
-// Update sub-criteria by ID
-router.put(
-  "/sub-criteria/:id",
+router.get(
+  "/sub-criteria/data",
   catchAsyncErrors(async (req, res, next) => {
     try {
-      const subCriteriaId = req.params.id;
-      const { sub_child_id, name, value } = req.body;
-
-      const subCriteria = await SubCriteria.findById(subCriteriaId);
-
-      if (!subCriteria) {
-        return next(new ErrorHandler("Sub-criteria not found", 404));
-      }
-
-      const targetSubCriteria = subCriteria.sub_criteria.find(
-        (sc) => sc._id.toString() === sub_child_id
-      );
-
-      if (!targetSubCriteria) {
-        return next(new ErrorHandler("Sub-criteria not found in array", 404));
-      }
-
-      targetSubCriteria.name = name;
-      targetSubCriteria.value = value;
-
-      await subCriteria.save();
+      // Ambil semua sub-criteria dari database
+      const allSubCriteria = await SubCriteria.find();
 
       res.status(200).json({
         success: true,
-        subCriteria,
+        subCriteria: allSubCriteria,
       });
     } catch (error) {
       return next(new ErrorHandler(error.message, 500));
@@ -290,6 +270,43 @@ router.put(
       res.status(201).json({
         success: true,
         subCriteria: existingSubCriteria,
+      });
+    } catch (error) {
+      return next(new ErrorHandler(error.message, 500));
+    }
+  })
+);
+
+// Update sub-criteria by ID
+router.put(
+  "/sub-criteria/:id",
+  catchAsyncErrors(async (req, res, next) => {
+    try {
+      const subCriteriaId = req.params.id;
+      const { sub_child_id, name, value } = req.body;
+
+      const subCriteria = await SubCriteria.findById(subCriteriaId);
+
+      if (!subCriteria) {
+        return next(new ErrorHandler("Sub-criteria not found", 404));
+      }
+
+      const targetSubCriteria = subCriteria.sub_criteria.find(
+        (sc) => sc._id.toString() === sub_child_id
+      );
+
+      if (!targetSubCriteria) {
+        return next(new ErrorHandler("Sub-criteria not found in array", 404));
+      }
+
+      targetSubCriteria.name = name;
+      targetSubCriteria.value = value;
+
+      await subCriteria.save();
+
+      res.status(200).json({
+        success: true,
+        subCriteria,
       });
     } catch (error) {
       return next(new ErrorHandler(error.message, 500));
