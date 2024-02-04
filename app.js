@@ -8,7 +8,7 @@ const cors = require("cors");
 app.use(
   cors(
     {
-      origin: ["https://www.ivannata.com"],
+      origin: ["*"],
       credentials: true,
     },
     (req, callback) => {
