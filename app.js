@@ -8,7 +8,7 @@ const cors = require("cors");
 app.use(
   cors(
     {
-      origin: ["https://front-end-eshop.vercel.app", "http://localhost:3000"],
+      origin: "*",
       credentials: true,
     },
     (req, callback) => {
@@ -45,6 +45,7 @@ const message = require("./controller/message");
 const withdraw = require("./controller/withdraw");
 const xendit = require("./controller/xendit");
 const criteria = require("./controller/criteria");
+const alternatif = require("./controller/alternatif");
 
 app.use("/api/v2/user", user);
 app.use("/api/v2/conversation", conversation);
@@ -58,6 +59,7 @@ app.use("/api/v2/payment", payment);
 app.use("/api/v2/withdraw", withdraw);
 app.use("/api/v2/xendit", xendit);
 app.use("/api/v2/criteria", criteria);
+app.use("/api/v2/alternatif", alternatif);
 // app.use("", welcome);
 
 // it's for ErrorHandling

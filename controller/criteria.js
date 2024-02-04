@@ -9,12 +9,13 @@ router.post(
   "",
   catchAsyncErrors(async (req, res, next) => {
     try {
-      const { name, type, value } = req.body;
+      const { name, type, value, criteria_code } = req.body;
 
       const criteria = new Criteria({
         name,
         type,
         value,
+        criteria_code,
       });
 
       await criteria.save();
@@ -34,7 +35,7 @@ router.put(
   "/:id",
   catchAsyncErrors(async (req, res, next) => {
     try {
-      const { name, type, value } = req.body;
+      const { name, type, value, criteria_code } = req.body;
       const criteriaId = req.params.id;
 
       const criteria = await Criteria.findById(criteriaId);
@@ -46,6 +47,7 @@ router.put(
       criteria.name = name;
       criteria.type = type;
       criteria.value = value;
+      criteria.criteria_code = criteria_code;
 
       await criteria.save();
 
@@ -165,7 +167,7 @@ router.get(
 
 // Delete sub-criteria by ID
 router.delete(
-  "/sub-criteria/delete/:id",
+  "/sub-criteria/:id",
   catchAsyncErrors(async (req, res, next) => {
     try {
       const subCriteriaId = req.params.id;
@@ -243,6 +245,7 @@ router.get(
 //   })
 // );
 
+// get all sub criteria
 router.get(
   "/sub-criteria",
   catchAsyncErrors(async (req, res, next) => {
@@ -260,35 +263,30 @@ router.get(
   })
 );
 
+// add sub criteria
 router.put(
-  "/add/:sub_criteria_id",
+  "/add/:criteria_id",
   catchAsyncErrors(async (req, res, next) => {
     try {
-      const { sub_criteria_id, name, value } = req.body;
+      const { name, value, description } = req.body;
+      const criteria_id = req.params.criteria_id; // This is how you get path parameters
 
-      // // Pastikan sub_criteria_id yang dimasukkan adalah string
-      // if (typeof sub_criteria_id !== "string") {
-      //   return next(new ErrorHandler("Invalid sub_criteria_id format", 400));
-      // }
+      // You should use findOneAndUpdate to find the document and update it atomically
+      const updatedSubCriteria = await SubCriteria.findOneAndUpdate(
+        { criteria_id: criteria_id }, // find a document by criteria_id
+        {
+          $push: { sub_criteria: { name, value, criteria_id, description } }, // push to the sub_criteria array
+        },
+        { new: true } // option to return the modified document
+      );
 
-      // Temukan dokumen yang sesuai dengan sub_criteria_id
-      const existingSubCriteria = await SubCriteria.findOne({
-        sub_criteria_id,
-      });
-
-      if (!existingSubCriteria) {
+      if (!updatedSubCriteria) {
         return next(new ErrorHandler("Criteria not found", 404));
       }
 
-      // Tambahkan sub_criteria baru ke array yang sudah ada
-      existingSubCriteria.sub_criteria.push({ name, value });
-
-      // Simpan perubahan
-      await existingSubCriteria.save();
-
       res.status(201).json({
         success: true,
-        subCriteria: existingSubCriteria,
+        subCriteria: updatedSubCriteria,
       });
     } catch (error) {
       return next(new ErrorHandler(error.message, 500));
@@ -302,7 +300,7 @@ router.put(
   catchAsyncErrors(async (req, res, next) => {
     try {
       const subCriteriaId = req.params.id;
-      const { sub_child_id, name, value } = req.body;
+      const { sub_child_id, name, value, description } = req.body;
 
       const subCriteria = await SubCriteria.findById(subCriteriaId);
 
@@ -320,12 +318,49 @@ router.put(
 
       targetSubCriteria.name = name;
       targetSubCriteria.value = value;
+      targetSubCriteria.description = description;
 
       await subCriteria.save();
 
       res.status(200).json({
         success: true,
         subCriteria,
+      });
+    } catch (error) {
+      return next(new ErrorHandler(error.message, 500));
+    }
+  })
+);
+
+router.delete(
+  "/delete/:sub_criteria_id/:sub_child_id",
+  catchAsyncErrors(async (req, res, next) => {
+    try {
+      const { sub_criteria_id, sub_child_id } = req.params;
+
+      const existingSubCriteria = await SubCriteria.findOne({
+        _id: sub_criteria_id,
+      });
+
+      if (!existingSubCriteria) {
+        return next(new ErrorHandler("Sub-criteria not found", 404));
+      }
+
+      const subCriteriaIndex = existingSubCriteria.sub_criteria.findIndex(
+        (sc) => sc._id.toString() === sub_child_id
+      );
+
+      if (subCriteriaIndex === -1) {
+        return next(new ErrorHandler("Sub-criteria not found in array", 404));
+      }
+
+      existingSubCriteria.sub_criteria.splice(subCriteriaIndex, 1);
+
+      await existingSubCriteria.save();
+
+      res.status(200).json({
+        success: true,
+        subCriteria: existingSubCriteria,
       });
     } catch (error) {
       return next(new ErrorHandler(error.message, 500));
