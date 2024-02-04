@@ -360,7 +360,7 @@ router.delete(
 
       res.status(200).json({
         success: true,
-        subCriteria: existingSubCriteria,
+        message: "Success delete sub-criteria child",
       });
     } catch (error) {
       return next(new ErrorHandler(error.message, 500));
