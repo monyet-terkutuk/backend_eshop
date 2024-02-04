@@ -5,6 +5,7 @@ const router = express.Router();
 const { Penilaian } = require("../model/penilaian");
 const { Criteria } = require("../model/criteria");
 const { Alternatif } = require("../model/alternatif");
+const { HasilAkhir } = require("../model/hasil_akhir");
 
 // Create Penilaian
 router.post(
@@ -56,6 +57,7 @@ router.get(
           alternatifResults[alternatif.kode_alternatif] = {
             _id: alternatif._id.toString(),
             kode_alternatif: alternatif.kode_alternatif,
+            bauran_promosi: alternatif.bauran_promosi,
           };
         }
 
@@ -91,10 +93,46 @@ router.get(
       // Convert the alternatifResults object into an array for penilaian
       const penilaianResults = Object.values(alternatifResults);
 
+      // Calculate Qi for each alternative
+      let QiResults = normalizationResults.map((normalized) => {
+        let sum = 0; // This will be used for the summation part of the Qi formula
+        let product = 1; // This will be used for the product part of the Qi formula
+        let Wj; // You need to define how to get the weight for each criterion
+
+        for (let i = 1; i <= Object.keys(criteriaMaxValues).length; i++) {
+          // Assuming you have a way to get the weight (Wj) for each criterion
+          Wj = 1 / Object.keys(criteriaMaxValues).length; // This should be replaced with the actual weight of the criterion
+          sum += normalized[`hasil_C${i}`] * Wj;
+          product *= Math.pow(normalized[`hasil_C${i}`], Wj);
+        }
+
+        let Qi = 0.5 * sum + 0.5 * product;
+
+        return {
+          alternatif_id: normalized._id,
+          kode_alternatif: normalized.kode_alternatif,
+          bauran_promosi: normalized.bauran_promosi,
+          nilai: Qi,
+        };
+      });
+
+      // Sort Qi results to get ranking
+      QiResults.sort((a, b) => b.nilai - a.nilai);
+      QiResults.forEach((result, index) => {
+        result.ranking = index + 1; // Assign ranking based on sorted order
+      });
+
+      // Save Qi results in HasilAkhir model
+      for (let result of QiResults) {
+        const hasilAkhir = new HasilAkhir(result);
+        await hasilAkhir.save();
+      }
+
       res.status(200).json({
         success: true,
         penilaian: penilaianResults,
         normalisasi: normalizationResults,
+        Qi: QiResults, // Contains Qi calculation results with 'kode_alternatif' and 'bauran_promosi'
       });
     } catch (error) {
       console.error("Error fetching data:", error);
