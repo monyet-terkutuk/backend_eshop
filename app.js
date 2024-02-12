@@ -47,6 +47,8 @@ const xendit = require("./controller/xendit");
 const criteria = require("./controller/criteria");
 const alternatif = require("./controller/alternatif");
 const penilaian = require("./controller/penilaian");
+const perhitungan = require("./controller/perhitungan");
+const hasilAkhir = require("./controller/hasilAkhir");
 
 app.use("/api/v2/user", user);
 app.use("/api/v2/conversation", conversation);
@@ -62,6 +64,8 @@ app.use("/api/v2/xendit", xendit);
 app.use("/api/v2/criteria", criteria);
 app.use("/api/v2/alternatif", alternatif);
 app.use("/api/v2/penilaian", penilaian);
+app.use("/api/v2/perhitungan", perhitungan);
+app.use("/api/v2/hasil_akhir", hasilAkhir);
 // app.use("", welcome);
 
 // it's for ErrorHandling
