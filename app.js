@@ -23,7 +23,7 @@ app.use(cookieParser());
 //   res.send("Hello BE!");
 // });
 
-app.use(bodyParser.urlencoded({ extended: true, limit: "50mb" }));
+app.use(bodyParser.urlencoded({ extended: true, limit: "200mb" }));
 
 // config
 if (process.env.NODE_ENV !== "PRODUCTION") {

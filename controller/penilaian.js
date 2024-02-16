@@ -6,6 +6,7 @@ const { Penilaian } = require("../model/penilaian");
 const { Criteria } = require("../model/criteria");
 const { Alternatif } = require("../model/alternatif");
 const { HasilAkhir } = require("../model/hasil_akhir");
+const Perhitungan = require("../model/perhitungan");
 
 // Create Penilaian
 router.post(

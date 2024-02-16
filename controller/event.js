@@ -6,6 +6,8 @@ const ErrorHandler = require("../utils/ErrorHandler");
 const { isSeller, isAdmin, isAuthenticated } = require("../middleware/auth");
 const router = express.Router();
 const cloudinary = require("cloudinary");
+const { sendEventBroadcast } = require("../utils/sendMail");
+const User = require("../model/user");
 
 // create event
 router.post(
@@ -44,9 +46,26 @@ router.post(
 
         const event = await Event.create(productData);
 
+        // broadcast event to all users
+        // looping to all users
+        const users = await User.find({ role: "user" });
+        const reqBroadcast = "false euy";
+
+        for (let i = 0; i < users.length; i++) {
+          const data = {
+            email: users[i].email,
+            name: event.name,
+            messsage: event.description,
+            image: event.images[0].url,
+            description: event.description,
+          };
+          reqBroadcast = sendEventBroadcast(data);
+        }
+
         res.status(201).json({
           success: true,
           event,
+          reqBroadcast,
         });
       }
     } catch (error) {
@@ -94,14 +113,14 @@ router.delete(
 
       if (!product) {
         return next(new ErrorHandler("Product is not found with this id", 404));
-      }    
+      }
 
       for (let i = 0; 1 < product.images.length; i++) {
         const result = await cloudinary.v2.uploader.destroy(
           event.images[i].public_id
         );
       }
-    
+
       await event.remove();
 
       res.status(201).json({
