@@ -2,6 +2,7 @@ const { Alternatif } = require("../model/alternatif");
 const ErrorHandler = require("../utils/ErrorHandler");
 const catchAsyncErrors = require("../middleware/catchAsyncErrors");
 const express = require("express");
+const { Penilaian } = require("../model/penilaian");
 const router = express.Router();
 
 // create new alternatif
@@ -142,6 +143,10 @@ router.delete(
       const deletedAlternatif = await Alternatif.findByIdAndDelete(
         alternatifId
       );
+
+      const deletePenilaian = await Penilaian.deleteMany({
+        alternatif_id: alternatifId,
+      });
 
       if (!deletedAlternatif) {
         return next(new ErrorHandler("Alternatif not found", 404));

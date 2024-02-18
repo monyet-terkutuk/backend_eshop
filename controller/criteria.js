@@ -192,12 +192,17 @@ router.delete(
 
 // get by id sub criteria
 router.get(
-  "/sub-criteria/:id",
+  "/sub-criteria/:parentId/:childId",
   catchAsyncErrors(async (req, res, next) => {
     try {
-      const subCriteriaId = req.params.id;
+      const subCriteriaId = req.params.parentId;
+      const criteriaId = req.params.childId;
 
       const subCriteria = await SubCriteria.findById(subCriteriaId);
+
+      const subCriteriaChild = subCriteria.sub_criteria.find(
+        (sc) => sc._id.toString() === criteriaId
+      );
 
       if (!subCriteria) {
         return next(new ErrorHandler("Sub-criteria not found", 404));
@@ -205,7 +210,8 @@ router.get(
 
       res.status(200).json({
         success: true,
-        subCriteria,
+        parent: subCriteria,
+        child: subCriteriaChild,
       });
     } catch (error) {
       return next(new ErrorHandler(error.message, 500));
@@ -361,6 +367,45 @@ router.delete(
       res.status(200).json({
         success: true,
         message: "Success delete sub-criteria child",
+      });
+    } catch (error) {
+      return next(new ErrorHandler(error.message, 500));
+    }
+  })
+);
+// update sub-criteria child by ID
+router.put(
+  "/sub-criteria/:oarentId/:childId",
+  catchAsyncErrors(async (req, res, next) => {
+    try {
+      const subCriteriaId = req.params.oarentId;
+      const criteriaId = req.params.childId;
+      const { name, value, description } = req.body;
+
+      const subCriteria = await SubCriteria.findById(subCriteriaId);
+
+      if (!subCriteria) {
+        return next(new ErrorHandler("Sub-criteria not found", 404));
+      }
+
+      const targetSubCriteria = subCriteria.sub_criteria.find(
+        (sc) => sc._id.toString() === criteriaId
+      );
+
+      if (!targetSubCriteria) {
+        return next(new ErrorHandler("Sub-criteria not found in array", 404));
+      }
+
+      // update child
+      targetSubCriteria.name = name;
+      targetSubCriteria.value = value;
+      targetSubCriteria.description = description;
+
+      await subCriteria.save();
+
+      res.status(200).json({
+        success: true,
+        subCriteria,
       });
     } catch (error) {
       return next(new ErrorHandler(error.message, 500));
