@@ -70,7 +70,7 @@ router.delete(
   })
 );
 
-// get coupon code value by its name
+// get coupon code value by its name test
 router.get(
   "/get-coupon-value/:name",
   catchAsyncErrors(async (req, res, next) => {
