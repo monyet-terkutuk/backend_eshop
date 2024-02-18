@@ -7,8 +7,8 @@ const Order = require("../model/order");
 const Shop = require("../model/shop");
 const cloudinary = require("cloudinary");
 const ErrorHandler = require("../utils/ErrorHandler");
-const multer = require("multer");
-const upload = multer({ dest: "uploads/" }); // temporarily store files in 'uploads/'
+// const multer = require("multer");
+// const upload = multer({ dest: "uploads/" }); // temporarily store files in 'uploads/'
 
 // create product
 router.post(
@@ -97,6 +97,53 @@ router.get(
 );
 
 // update product by _id
+// router.put(
+//   "/update-product/:id",
+//   upload.array("images"), // handle the files from the 'images' key
+//   catchAsyncErrors(async (req, res, next) => {
+//     try {
+//       let images = [];
+
+//       if (typeof req.body.images === "string") {
+//         images.push(req.body.images); // Single image
+//       } else if (req.body.images && typeof req.body.images === "object") {
+//         images = req.body.images; // Multiple images
+//       }
+
+//       const imagesLinks = [];
+
+//       for (let i = 0; i < images.length; i++) {
+//         const result = await cloudinary.v2.uploader.upload(images[i], {
+//           folder: "products",
+//         });
+
+//         imagesLinks.push({
+//           public_id: result.public_id,
+//           url: result.secure_url,
+//         });
+//       }
+
+//       const id = req.params.id;
+
+//       const productData = req.body;
+//       productData.images = imagesLinks;
+
+//       const product = await Product.findByIdAndUpdate(id, productData, {
+//         new: true,
+//         runValidators: true,
+//         useFindAndModify: false,
+//       });
+
+//       res.status(201).json({
+//         success: true,
+//         product,
+//       });
+//     } catch (error) {
+//       return next(new ErrorHandler(error, 400));
+//     }
+//   })
+// );
+
 router.put(
   "/update-product/:id",
   catchAsyncErrors(async (req, res, next) => {
