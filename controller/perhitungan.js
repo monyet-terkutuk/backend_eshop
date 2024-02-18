@@ -4,7 +4,7 @@ const catchAsyncErrors = require("../middleware/catchAsyncErrors");
 const express = require("express");
 const router = express.Router();
 
-// create new perhitungan
+// create new perhitungan test
 router.post(
   "",
   catchAsyncErrors(async (req, res, next) => {
