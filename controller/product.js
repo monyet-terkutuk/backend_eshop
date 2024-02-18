@@ -99,21 +99,14 @@ router.get(
 // update product by _id
 router.put(
   "/update-product/:id",
-  upload.array("images"), // handle the files from the 'images' key
   catchAsyncErrors(async (req, res, next) => {
     try {
-      let images = [];
-
-      if (typeof req.body.images === "string") {
-        images.push(req.body.images); // Single image
-      } else if (req.body.images && typeof req.body.images === "object") {
-        images = req.body.images; // Multiple images
-      }
+      const images = req.files; // req.files contains the uploaded files
 
       const imagesLinks = [];
 
       for (let i = 0; i < images.length; i++) {
-        const result = await cloudinary.v2.uploader.upload(images[i], {
+        const result = await cloudinary.v2.uploader.upload(images[i].path, {
           folder: "products",
         });
 
